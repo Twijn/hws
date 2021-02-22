@@ -51,7 +51,7 @@ public class SpawnCommand implements CommandExecutor {
 
                     if (disallowedWorlds.contains(world.getName())) {
                         if (disallowedDefault == null) {
-                            target.sendMessage(String.format(lang.getError("spawn.disallowed")));
+                            sender.sendMessage(String.format(lang.getError("spawn.disallowed")));
                             return true;
                         } else {
                             world = disallowedDefault;
@@ -77,10 +77,21 @@ public class SpawnCommand implements CommandExecutor {
         } else if (sender instanceof Player) {
             Player player = (Player) sender;
 
-            Location spawn = manager.getSpawnPoint(player.getWorld());
+            World world = player.getWorld();
+
+            if (disallowedWorlds.contains(world.getName())) {
+                if (disallowedDefault == null) {
+                    player.sendMessage(String.format(lang.getError("spawn.disallowed")));
+                    return true;
+                } else {
+                    world = disallowedDefault;
+                }
+            }
+
+            Location spawn = manager.getSpawnPoint(world);
 
             if (spawn == null) {
-                spawn = player.getWorld().getSpawnLocation();
+                spawn = world.getSpawnLocation();
             }
 
             player.teleport(spawn);
