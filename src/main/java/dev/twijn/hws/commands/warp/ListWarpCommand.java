@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class ListWarpCommand implements CommandExecutor, TabCompleter {
 
@@ -25,8 +26,6 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
     private LangManager lang;
 
     private ConnectionManager connectionManager;
-
-    private List<String> autocomplete = null;
 
     public ListWarpCommand(WarpManager manager, LangManager lang, ConnectionManager connectionManager) {
         this.manager = manager;
@@ -42,7 +41,9 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
 
             int page = 1;
 
-            if (args.length > 0) {
+            UUID target = null;
+
+            if (args.length == 1) {
                 try {
                     page = Integer.parseInt(args[0]);
                     if (page > totalPages) {
@@ -54,16 +55,47 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
                         return true;
                     }
                 } catch (NumberFormatException exception) {
-                    player.sendMessage(String.format(lang.getError("warps.list.page.nan"), args[0]));
-                    return true;
+                    Connection con = null;
+                    try {
+                        con = connectionManager.createConnection();
+
+                        PreparedStatement getPlayer = con.prepareStatement("select uuid from player where latest_name = ?;");
+                        getPlayer.setString(1, args[0]);
+                        ResultSet playerSet = getPlayer.executeQuery();
+
+                        if (playerSet.next()) {
+                            target = UUID.fromString(playerSet.getString(1));
+                        } else {
+                            player.sendMessage(String.format(lang.getError("warps.list.player-not-found-invalid-page"), args[0]));
+                            return true;
+                        }
+                    } catch (Exception exception2) {
+                        exception2.printStackTrace();
+                    } finally {
+                        try {
+                            if (con != null && !con.isClosed()) con.close();
+                        } catch (SQLException exception2) {
+                            exception2.printStackTrace();
+                        }
+                    }
                 }
             }
 
-            StringBuilder warpList = new StringBuilder(String.format(lang.getNormal("warps.list.header"), page, totalPages, totalWarps));
+            List<Warp> warps = null;
 
-            for (Warp warp : manager.getWarps(page, WARPS_PER_PAGE)) {
+            if (target == null) {
+                warps = manager.getWarps(page, WARPS_PER_PAGE);
+            } else {
+                warps = manager.getWarps(target);
+            }
+
+            StringBuilder warpList = new StringBuilder(String.format(lang.getNormal("warps.list.header" + (target != null ? "-no-page": "")), page, totalPages, totalWarps));
+
+            for (Warp warp : warps) {
                 warpList.append("\n" + String.format(lang.getExtension("warps.list.item"), warp.getWarpName(), warp.getOwnerName(), warp.getLocation().getWorld().getName(), warp.getLocation().getBlockX(), warp.getLocation().getBlockY(), warp.getLocation().getBlockZ()));
             }
+
+            if (warps.size() == 0) warpList.append("\n" + lang.getError("warp.list.no-warps"));
 
             player.sendMessage(warpList.toString());
         } else {
@@ -73,8 +105,9 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    public void refreshTabComplete() {
-        autocomplete = new ArrayList<String>();
+    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
+        List<String> pages = new ArrayList<String>();
+        List<String> usernames = new ArrayList<String>();
 
         Connection con = null;
         try {
@@ -84,7 +117,7 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
             ResultSet usernameSet = getUsernames.executeQuery();
 
             while (usernameSet.next()) {
-                autocomplete.add(usernameSet.getString(1));
+                usernames.add(usernameSet.getString(1));
             }
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -97,29 +130,32 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
         }
 
         for (int i = 1;i <= manager.getWarpCount();i++) {
-            autocomplete.add("" + i);
+            pages.add("" + i);
         }
-    }
 
-    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
-        if (autocomplete == null) refreshTabComplete();
+        if (args.length <= 1) {
+            List<String> autocomplete = new ArrayList<String>();
+            String arg = "";
 
-        List<String> newAutocomplete = autocomplete;
+            if (args.length == 1) {
+                arg = args[0].toLowerCase();
+            }
 
-        System.out.println(newAutocomplete);
-
-        if (args.length == 1) {
-            List<String> removeAutocomplete = new ArrayList<String>();
-            for (String a : newAutocomplete) {
-                if (!a.toLowerCase().startsWith(args[0].toLowerCase())) {
-                    removeAutocomplete.add(a);
+            for (String username : usernames) {
+                if (username.toLowerCase().startsWith(arg)) {
+                    autocomplete.add(username);
                 }
             }
-            for (String a : removeAutocomplete) {
-                newAutocomplete.remove(a);
+
+            for (String page : pages) {
+                if (page.toLowerCase().startsWith(arg)) {
+                    autocomplete.add(page);
+                }
             }
+
+            return autocomplete;
         }
 
-        return newAutocomplete;
+        return new ArrayList<String>();
     }
 }

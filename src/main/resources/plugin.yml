@@ -39,7 +39,7 @@ commands:
     permission: hws.warp.delete
   listwarp:
     description: Lists all warps in the server
-    usage: /<command> [Filter]
+    usage: /<command> [Player/Page]
     aliases: [listwarps, lswarp, lswarps, warplist, warps]
     permission: hws.warp.list
 
