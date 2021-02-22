@@ -1,0 +1,55 @@
+#----------------------------#
+# English (US) Language File #
+#----------------------------#
+prefix: '&7[&6&lHWS&7] '
+extension-prefix: '&7   ⟶   '
+
+message-color: '&7'
+error-color: '&c'
+
+in-game: '&cYou can only use this command in game.'
+
+homes:
+  teleported: 'Teleported to "%1$s"'
+  set: 'Home "%1$s" was set!'
+  deleted: 'Home "%1$s" was deleted successfully'
+  already-exists: 'Home "%1$s" already exists'
+  does-not-exist: 'Home "%1$s" does not exist'
+  limit-reached: 'You have reached your limit for setting homes! Your limit: "%1$d"'
+  regex: 'Invalid home name, does not match "%1$s"'
+
+  # %1$s = comma-separated list of homes ; %2$d = number of homes set ; %3$s = number of homes allowed, or inf
+  list: 'Homes (%2$d/%3$s): &f%1$s'
+  no-homes: "You haven't set a home yet"
+
+  unknown: 'An unknown exception has occurred'
+
+warps:
+  teleported: 'Teleported to "%1$s"'
+  set: 'Warp "%1$s" was set!'
+  deleted: 'Warp "%1$s" was deleted successfully'
+  already-exists: 'Warp "%1$s" already exists'
+  does-not-exist: 'Warp "%1$s" does not exist'
+  limit-reached: 'You have reached your limit for setting warps! Your limit: "%1$d"'
+  regex: 'Invalid warp name, does not match "%1$s"'
+  no-permission: "You don't have permission to delete this warp!"
+
+  list:
+    header: '&7===--------- &fWarps &7(Page &f%1$d&7/&f%2$d&7) &7---------==='
+    # %1$s = warp name ; %2$s = warp owner ; %3$s warp world ; %4$d warp x value ; %5$d warp y value ; %6$d warp z value
+    item: '"&f%1$s&7" [&f%3$s&7] set by &f%2$s&7 around x=&f%4$d &7and z=&f%6$d'
+
+    page:
+      nan: 'Page "%1$s" is not a whole number'
+      under-one: 'Page number must be at least 1'
+      over-total: 'Page does not exist: %1$d/%2$d'
+
+  unknown: 'An unknown exception has occurred'
+
+spawn:
+  teleported: 'Teleported to spawn in world "%1$s"'
+  sent: 'Sent "%1$s" to spawn point in world "%2$s"'
+  target-not-found: 'Target "%1$s" is not online'
+  set: 'Spawn has been set in world "%1$s"'
+  disallowed: 'Setting a spawn was disabled in this world'
+  send-no-permission: "This command is disabled in this world"

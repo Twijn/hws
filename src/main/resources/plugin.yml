@@ -1,0 +1,118 @@
+name: HWS
+version: 1.0-SNAPSHOT
+api-version: 1.16
+website: https://hws.twijn.dev
+main: dev.twijn.hws.HWSPlugin
+
+commands:
+  home:
+    description: Teleports you to your home with the name of [Name]
+    usage: /<command> [Name=home]
+    permission: hws.home
+  sethome:
+    description: Creates a new home (Named [Name]) with your current position
+    usage: /<command> [Name=home]
+    permission: hws.home.set
+  deletehome:
+    description: Deletes the home with the name of [Name]
+    usage: /<command> [Name=home]
+    aliases: [delhome]
+    permission: hws.home.delete
+  listhome:
+    description: Lists all homes that a player owns
+    usage: /<command>
+    aliases: [listhomes, lshome, lshomes, homelist, homes]
+    permission: hws.home.list
+
+  warp:
+    description: Teleports you to the warp with the name of [Name]
+    usage: /<command> <Name>
+    permission: hws.warp
+  setwarp:
+    description: Creates a new warp (Named [Name]) with your current position
+    usage: /<command> <Name>
+    permission: hws.warp.set
+  deletewarp:
+    description: Deletes the warp with the name of [Name]
+    usage: /<command> <Name>
+    aliases: [delwarp]
+    permission: hws.warp.delete
+  listwarp:
+    description: Lists all warps in the server
+    usage: /<command> [Filter]
+    aliases: [listwarps, lswarp, lswarps, warplist, warps]
+    permission: hws.warp.list
+
+  spawn:
+    description: Teleports you, or [Player] if provided, to the spawn point
+    usage: /<command> [Player]
+    permission: hws.spawn
+  setspawn:
+    description: Sets the world spawn point to your current location
+    usage: /<command>
+    permission: hws.setspawn
+
+permissions:
+  hws.admin:
+    description: Gives permissions that may be desired for server administrators
+    children:
+      hws.home.others: true
+      hws.warp.delete.others: true
+      hws.spawn.send: true
+
+  hws.home.*:
+    description: Gives all base permissions for homes
+    children:
+      hws.home: true
+      hws.home.set: true
+      hws.home.delete: true
+
+  hws.home:
+    description: Base permission for /home
+    default: true
+  hws.home.others:
+    description: Permission to teleport to other player's homes
+    default: op
+    children:
+      hws.home: true
+  hws.home.set:
+    description: Base permission for /sethome
+    default: true
+  hws.home.delete:
+    description: Base permission for /deletehome
+    default: true
+  hws.home.list:
+    description: Base permission for /listhome
+    default: true
+
+  hws.home.count.infinite:
+    description: Gives permission to an infinite number of homes
+    default: op
+
+  hws.warp:
+    description: Base permission for /warp
+    default: true
+  hws.warp.set:
+    description: Base permission for /setwarp
+    default: op
+  hws.warp.delete:
+    description: Base permission for /deletewarp
+    default: op
+  hws.warp.delete.others:
+    description: Permission to delete other player's warps
+    default: op
+  hws.warp.list:
+    descripton: Base permission for /listwarp
+    default: true
+
+  hws.spawn:
+    description: Base permission for /spawn
+    default: true
+  hws.spawn.send:
+    description: Permission to send others to spawn
+    default: op
+    children:
+      hws.spawn: true
+  hws.setspawn:
+    description: Base permission for /setspawn
+    default: op

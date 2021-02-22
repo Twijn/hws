@@ -1,0 +1,45 @@
+#========================#
+# HWS Configuration File #
+#========================#
+
+database:
+
+  # Selected database engine. Options: sqlite, mysql. Will always default to sqlite
+  engine: sqlite
+
+  ## MySQL options, if enabled. ##
+
+  # IP for connection to the MySQL database
+  host: localhost
+  # MySQL Database name
+  database: hws
+  # MySQL Username
+  user: hws
+  # MySQL Password
+  password: password
+
+# Note that changing the max characters allowed in the RegEx will NOT
+# change the max characters allowed in the database.
+#
+# The effective limit for home and warp names is currently 25.
+
+homes:
+  # RegEx validation for setting homes
+  regex: '^[a-zA-Z0-9\-_]{1,25}$'
+
+  disallow-in-worlds: []
+
+warps:
+  # RegEx validation for setting warps
+  regex: '^[a-zA-Z0-9\-_]{1,25}$'
+
+  disallow-in-worlds: []
+
+
+spawn:
+  # This should either be the name of the world to default to the spawn of, or "disable"
+  disallow-action: world
+
+  disallow-in-worlds:
+  - world_nether
+  - world_the_end
