@@ -37,8 +37,8 @@ warps:
   list:
     header: '&7===--------- &fWarps &7(Page &f%1$d&7/&f%2$d&7) &7---------==='
     header-no-page: '&7===---------------- &fWarps &7----------------==='
-    # %1$s = warp name ; %2$s = warp owner ; %3$s warp world ; %4$d warp x value ; %5$d warp y value ; %6$d warp z value
-    item: '"&f%1$s&7" [&f%3$s&7] set by &f%2$s&7 around x=&f%4$d &7and z=&f%6$d'
+    # %1$s = warp name ; %2$s = warp owner ; %3$s = warp world ; %4$d = warp x value ; %5$d = warp y value ; %6$d = warp z value ; %7$d = uses
+    item: '"&f%1$s&7" [&f%3$s&7] - &f%2$s&7 (&f%7$d &7uses)'
     no-warps: 'No warps were found!'
 
     player-not-found-invalid-page: '"%1$s" is not a valid page number or player'
