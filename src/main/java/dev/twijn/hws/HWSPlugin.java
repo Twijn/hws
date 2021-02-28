@@ -134,13 +134,19 @@ public class HWSPlugin extends JavaPlugin {
         getCommand("deletehome").setExecutor(new DeleteHomeCommand(homeManager, langManager));
         getCommand("listhome").setExecutor(new ListHomeCommand(homeManager, langManager));
 
+        HomeCompleter homeCompleter = new HomeCompleter(homeManager);
+        getCommand("home").setTabCompleter(homeCompleter);
+        getCommand("deletehome").setTabCompleter(homeCompleter);
+
         getCommand("warp").setExecutor(new WarpCommand(warpManager, langManager));
         getCommand("setwarp").setExecutor(new SetWarpCommand(warpManager, langManager));
         getCommand("deletewarp").setExecutor(new DeleteWarpCommand(warpManager, langManager));
 
-        ListWarpCommand listWarpCommand = new ListWarpCommand(warpManager, langManager, connectionManager);
-        getCommand("listwarp").setExecutor(listWarpCommand);
-        getCommand("listwarp").setTabCompleter(listWarpCommand);
+        WarpCompleter warpCompleter = new WarpCompleter(warpManager);
+        getCommand("warp").setTabCompleter(warpCompleter);
+        getCommand("deletewarp").setTabCompleter(warpCompleter);
+
+        getCommand("listwarp").setExecutor(new ListWarpCommand(warpManager, langManager, connectionManager));
 
         getCommand("spawn").setExecutor(new SpawnCommand(spawnManager, langManager, getConfiguration("config.yml").getYAML()));
         getCommand("setspawn").setExecutor(new SetSpawnCommand(spawnManager, langManager, getConfiguration("config.yml").getYAML()));
