@@ -6,12 +6,9 @@ import dev.twijn.hws.objects.Home;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import java.util.List;
-
-public class HomeCommand implements CommandExecutor, TabCompleter {
+public class HomeCommand implements CommandExecutor {
 
     private HomeManager manager = null;
     private LangManager lang = null;
@@ -39,10 +36,5 @@ public class HomeCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(lang.getNoPrefix("in-game"));
         }
         return true;
-    }
-
-    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
-
-        return null;
     }
 }
