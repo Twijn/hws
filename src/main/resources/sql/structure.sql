@@ -31,6 +31,7 @@ create table if not exists warp (
     , pitch float not null
     , yaw float not null
     , created bigint(20) not null
+    , uses int not null default 0
     , constraint pk_warp primary key (name)
     , constraint fk_warp_player foreign key (owner_uuid)
                                 references player(uuid)
