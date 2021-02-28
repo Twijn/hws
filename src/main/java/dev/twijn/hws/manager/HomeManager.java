@@ -14,10 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Home management class
@@ -25,7 +22,7 @@ import java.util.UUID;
  * @author Twijn
  */
 public class HomeManager implements Manager {
-    // We may want to cache this information later down the line.
+    private Map<UUID, Map<String, Home>> homeList = new HashMap<UUID, Map<String, Home>>();
 
     private ConnectionManager connectionManager;
     private String regex;
@@ -33,6 +30,43 @@ public class HomeManager implements Manager {
         connectionManager = HWSPlugin.getInstance().getConnectionManager();
 
         regex = HWSPlugin.getInstance().getConfiguration("config.yml").getYAML().getString("homes.regex");
+
+        Connection con = null;
+        try {
+            con = connectionManager.createConnection();
+
+            PreparedStatement getHomes = con.prepareStatement("select name, owner_uuid, world, x, y, z, yaw, pitch, created from home;");
+            ResultSet homeSet = getHomes.executeQuery();
+
+            while (homeSet.next()) {
+                UUID owner = UUID.fromString(homeSet.getString(2));
+                if (!homeList.containsKey(owner)) {
+                    homeList.put(owner, new TreeMap<String, Home>());
+                }
+
+                homeList.get(owner).put(homeSet.getString(1).toLowerCase(), new Home(
+                        homeSet.getString(1),
+                        owner,
+                        new Location(
+                                Bukkit.getWorld(homeSet.getString(3)),
+                                homeSet.getDouble(4),
+                                homeSet.getDouble(5),
+                                homeSet.getDouble(6),
+                                homeSet.getFloat(7),
+                                homeSet.getFloat(8)
+                        ),
+                        homeSet.getInt(9)
+                ));
+            }
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        } finally {
+            try {
+                if (con != null && !con.isClosed()) con.close();
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
+        }
     }
 
     public String getRegex() {
@@ -73,44 +107,7 @@ public class HomeManager implements Manager {
      * @return List of Home objects which has been set with the specified UUID
      */
     public List<Home> getHomes(UUID uuid) {
-        Connection con = null;
-        try {
-            con = connectionManager.createConnection();
-
-            List<Home> homes = new ArrayList<Home>();
-
-            PreparedStatement getHomes = con.prepareStatement("select name, owner_uuid, world, x, y, z, yaw, pitch, created from home where owner_uuid = ?;");
-            getHomes.setString(1, uuid.toString());
-            ResultSet homeSet = getHomes.executeQuery();
-
-            while (homeSet.next()) {
-                homes.add(new Home(
-                        homeSet.getString(1),
-                        UUID.fromString(homeSet.getString(2)),
-                        new Location(
-                                Bukkit.getWorld(homeSet.getString(3)),
-                                homeSet.getDouble(4),
-                                homeSet.getDouble(5),
-                                homeSet.getDouble(6),
-                                homeSet.getFloat(7),
-                                homeSet.getFloat(8)
-                        ),
-                        homeSet.getInt(9)
-                        ));
-            }
-
-            return homes;
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        } finally {
-            try {
-                if (con != null && !con.isClosed()) con.close();
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
-        }
-
-        return null;
+        return homeList.containsKey(uuid) ? new ArrayList<Home>(homeList.get(uuid).values()) : new ArrayList<Home>();
     }
 
     /**
@@ -120,44 +117,9 @@ public class HomeManager implements Manager {
      * @return The generated Home object
      */
     public Home getHome(UUID uuid, String homeName) {
-        Connection con = null;
-        try {
-            con = connectionManager.createConnection();
-
-            List<Home> homes = new ArrayList<Home>();
-
-            PreparedStatement getHomes = con.prepareStatement("select name, owner_uuid, world, x, y, z, yaw, pitch, created from home where name = ? and owner_uuid = ?;");
-            getHomes.setString(1, homeName);
-            getHomes.setString(2, uuid.toString());
-            ResultSet homeSet = getHomes.executeQuery();
-
-            if (homeSet.next()) {
-                return new Home(
-                        homeSet.getString(1),
-                        UUID.fromString(homeSet.getString(2)),
-                        new Location(
-                                Bukkit.getWorld(homeSet.getString(3)),
-                                homeSet.getDouble(4),
-                                homeSet.getDouble(5),
-                                homeSet.getDouble(6),
-                                homeSet.getFloat(7),
-                                homeSet.getFloat(8)
-                        ),
-                        homeSet.getInt(9)
-                );
-            } else {
-                return null;
-            }
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        } finally {
-            try {
-                if (con != null && !con.isClosed()) con.close();
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
+        if (homeList.containsKey(uuid) && homeList.get(uuid).containsKey(homeName.toLowerCase())) {
+            return homeList.get(uuid).get(homeName.toLowerCase());
         }
-
         return null;
     }
 
@@ -216,6 +178,17 @@ public class HomeManager implements Manager {
             addHome.setFloat(8, location.getYaw());
             addHome.setInt(9, (int)Math.floor(new Date().getTime() / 1000));
             addHome.execute();
+
+            if (!homeList.containsKey(uuid)) {
+                homeList.put(uuid, new TreeMap<String, Home>());
+            }
+
+            homeList.get(uuid).put(homeName.toLowerCase(), new Home(
+                    homeName,
+                    uuid,
+                    location,
+                    (int)Math.floor(new Date().getTime() / 1000)
+            ));
         } catch (HomeExistsException e) {
             throw e; // rethrow
         } catch (SQLException e) {
@@ -262,6 +235,14 @@ public class HomeManager implements Manager {
                 checkExists2.setString(1, uuid.toString());
                 checkExists2.setString(2, homeName);
                 ResultSet cers2 = checkExists2.executeQuery();
+
+                if (homeList.containsKey(uuid)) {
+                    homeList.get(uuid).remove(homeName.toLowerCase());
+
+                    if (homeList.get(uuid).size() == 0) {
+                        homeList.remove(uuid);
+                    }
+                }
                 return !cers2.next();
             }
         } catch (Exception exception) {

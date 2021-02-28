@@ -5,7 +5,6 @@ import dev.twijn.hws.manager.connection.ConnectionManager;
 import dev.twijn.hws.manager.exceptions.WarpExistsException;
 import dev.twijn.hws.manager.exceptions.InvalidWarpNameException;
 import dev.twijn.hws.manager.exceptions.OutOfWarpsException;
-import dev.twijn.hws.objects.Home;
 import dev.twijn.hws.objects.Warp;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -15,10 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Warp management class
@@ -26,7 +22,7 @@ import java.util.UUID;
  * @author Twijn
  */
 public class WarpManager implements Manager {
-    // We may want to cache this information later down the line.
+    private Map<String, Warp> warpList = new TreeMap<String, Warp>();
 
     private ConnectionManager connectionManager;
     private String regex;
@@ -34,6 +30,39 @@ public class WarpManager implements Manager {
         connectionManager = HWSPlugin.getInstance().getConnectionManager();
 
         regex = HWSPlugin.getInstance().getConfiguration("config.yml").getYAML().getString("warps.regex");
+
+        Connection con = null;
+        try {
+            con = connectionManager.createConnection();
+
+            PreparedStatement getWarps = con.prepareStatement("select name, owner_uuid, world, x, y, z, yaw, pitch, created, uses from warp;");
+            ResultSet warpSet = getWarps.executeQuery();
+
+            while (warpSet.next()) {
+                warpList.put(warpSet.getString(1).toLowerCase(), new Warp(
+                        warpSet.getString(1),
+                        UUID.fromString(warpSet.getString(2)),
+                        new Location(
+                                Bukkit.getWorld(warpSet.getString(3)),
+                                warpSet.getDouble(4),
+                                warpSet.getDouble(5),
+                                warpSet.getDouble(6),
+                                warpSet.getFloat(7),
+                                warpSet.getFloat(8)
+                        ),
+                        warpSet.getInt(9),
+                        warpSet.getInt(10)
+                ));
+            }
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        } finally {
+            try {
+                if (con != null && !con.isClosed()) con.close();
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
+        }
     }
 
     public String getRegex() {
@@ -60,71 +89,30 @@ public class WarpManager implements Manager {
     }
 
     public int getWarpCount() {
-        Connection con = null;
-        try {
-            con = connectionManager.createConnection();
+        return warpList.size();
+    }
 
-            PreparedStatement getCount = con.prepareStatement("select count(name) from warp;");
-            ResultSet countSet = getCount.executeQuery();
-
-            if (countSet.next()) {
-                return countSet.getInt(1);
-            } else {
-                return 0;
-            }
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        } finally {
-            try {
-                if (con != null && !con.isClosed()) con.close();
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
-        }
-
-        return 0;
+    public List<Warp> getWarps() {
+        List<Warp> result = new ArrayList<Warp>(warpList.values());
+        Collections.sort(result);
+        return result;
     }
 
     public List<Warp> getWarps(int page, int warpsPerPage) {
-        Connection con = null;
-        try {
-            con = connectionManager.createConnection();
+        List<Warp> result = new ArrayList<Warp>();
 
-            List<Warp> warps = new ArrayList<Warp>();
+        List<Warp> allWarps = new ArrayList<Warp>(warpList.values());
+        Collections.sort(allWarps);
 
-            PreparedStatement getWarps = con.prepareStatement("select name, owner_uuid, world, x, y, z, yaw, pitch, created from warp limit ?, ?;");
-            getWarps.setInt(1, (page - 1) * warpsPerPage);
-            getWarps.setInt(2, warpsPerPage);
-            ResultSet warpSet = getWarps.executeQuery();
-
-            while (warpSet.next()) {
-                warps.add(new Warp(
-                        warpSet.getString(1),
-                        UUID.fromString(warpSet.getString(2)),
-                        new Location(
-                                Bukkit.getWorld(warpSet.getString(3)),
-                                warpSet.getDouble(4),
-                                warpSet.getDouble(5),
-                                warpSet.getDouble(6),
-                                warpSet.getFloat(7),
-                                warpSet.getFloat(8)
-                        ),
-                        warpSet.getInt(9)
-                ));
+        int i = 0;
+        for (Warp warp : allWarps) {
+            if (i >= (page - 1) * warpsPerPage && i < page * warpsPerPage) {
+                result.add(warp);
             }
 
-            return warps;
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        } finally {
-            try {
-                if (con != null && !con.isClosed()) con.close();
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
+            i++;
         }
-
-        return null;
+        return result;
     }
 
     /**
@@ -142,44 +130,16 @@ public class WarpManager implements Manager {
      * @return List of Warp objects which has been set with the specified UUID
      */
     public List<Warp> getWarps(UUID uuid) {
-        Connection con = null;
-        try {
-            con = connectionManager.createConnection();
+        List<Warp> result = new ArrayList<Warp>();
 
-            List<Warp> warps = new ArrayList<Warp>();
-
-            PreparedStatement getWarps = con.prepareStatement("select name, owner_uuid, world, x, y, z, yaw, pitch, created from warp where owner_uuid = ?;");
-            getWarps.setString(1, uuid.toString());
-            ResultSet warpSet = getWarps.executeQuery();
-
-            while (warpSet.next()) {
-                warps.add(new Warp(
-                        warpSet.getString(1),
-                        UUID.fromString(warpSet.getString(2)),
-                        new Location(
-                                Bukkit.getWorld(warpSet.getString(3)),
-                                warpSet.getDouble(4),
-                                warpSet.getDouble(5),
-                                warpSet.getDouble(6),
-                                warpSet.getFloat(7),
-                                warpSet.getFloat(8)
-                        ),
-                        warpSet.getInt(9)
-                        ));
-            }
-
-            return warps;
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        } finally {
-            try {
-                if (con != null && !con.isClosed()) con.close();
-            } catch (SQLException exception) {
-                exception.printStackTrace();
+        for (Warp warp : warpList.values()) {
+            if (warp.getOwner().equals(uuid)) {
+                result.add(warp);
             }
         }
 
-        return null;
+        Collections.sort(result);
+        return result;
     }
 
     /**
@@ -188,35 +148,22 @@ public class WarpManager implements Manager {
      * @return The generated Warp object
      */
     public Warp getWarp(String warpName) {
+        return warpList.get(warpName.toLowerCase());
+    }
+
+    public void addUse(Warp warp) {
+
         Connection con = null;
         try {
             con = connectionManager.createConnection();
 
-            List<Home> homes = new ArrayList<Home>();
+            PreparedStatement addUse = con.prepareStatement("update warp set uses = uses + 1 where name = ?;");
+            addUse.setString(1, warp.getWarpName());
+            addUse.execute();
 
-            PreparedStatement getWarps = con.prepareStatement("select name, owner_uuid, world, x, y, z, yaw, pitch, created from warp where name = ?;");
-            getWarps.setString(1, warpName);
-            ResultSet warpSet = getWarps.executeQuery();
-
-            if (warpSet.next()) {
-                return new Warp(
-                        warpSet.getString(1),
-                        UUID.fromString(warpSet.getString(2)),
-                        new Location(
-                                Bukkit.getWorld(warpSet.getString(3)),
-                                warpSet.getDouble(4),
-                                warpSet.getDouble(5),
-                                warpSet.getDouble(6),
-                                warpSet.getFloat(7),
-                                warpSet.getFloat(8)
-                        ),
-                        warpSet.getInt(9)
-                );
-            } else {
-                return null;
-            }
-        } catch (Exception exception) {
-            exception.printStackTrace();
+            warp.use();
+        } catch (SQLException e) {
+            e.printStackTrace();
         } finally {
             try {
                 if (con != null && !con.isClosed()) con.close();
@@ -224,8 +171,6 @@ public class WarpManager implements Manager {
                 exception.printStackTrace();
             }
         }
-
-        return null;
     }
 
     /**
@@ -282,6 +227,8 @@ public class WarpManager implements Manager {
             addWarp.setFloat(8, location.getYaw());
             addWarp.setInt(9, (int)Math.floor(new Date().getTime() / 1000));
             addWarp.execute();
+
+            warpList.put(warpName.toLowerCase(), new Warp(warpName, uuid, location, (int)Math.floor(new Date().getTime() / 1000), 0));
         } catch (WarpExistsException e) {
             throw e; // rethrow
         } catch (SQLException e) {
@@ -324,6 +271,8 @@ public class WarpManager implements Manager {
                 PreparedStatement checkExists2 = con.prepareStatement("select name from warp where name = ?;");
                 checkExists2.setString(1, warpName);
                 ResultSet cers2 = checkExists2.executeQuery();
+
+                warpList.remove(warpName.toLowerCase());
                 return !cers2.next();
             }
         } catch (Exception exception) {
