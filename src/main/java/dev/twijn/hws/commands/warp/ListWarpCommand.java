@@ -20,7 +20,7 @@ import java.util.UUID;
 
 public class ListWarpCommand implements CommandExecutor, TabCompleter {
 
-    private static int WARPS_PER_PAGE = 15;
+    private static int WARPS_PER_PAGE = 8;
 
     private WarpManager manager;
     private LangManager lang;
@@ -37,7 +37,7 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
         if (sender instanceof Player) {
             Player player = (Player) sender;
             int totalWarps = manager.getWarpCount();
-            int totalPages = (int)Math.max(1, Math.ceil(totalWarps / WARPS_PER_PAGE));
+            int totalPages = (int)Math.max(1, Math.ceil((double)totalWarps / (double)WARPS_PER_PAGE));
 
             int page = 1;
 
@@ -92,10 +92,10 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
             StringBuilder warpList = new StringBuilder(String.format(lang.getNormal("warps.list.header" + (target != null ? "-no-page": "")), page, totalPages, totalWarps));
 
             for (Warp warp : warps) {
-                warpList.append("\n" + String.format(lang.getExtension("warps.list.item"), warp.getWarpName(), warp.getOwnerName(), warp.getLocation().getWorld().getName(), warp.getLocation().getBlockX(), warp.getLocation().getBlockY(), warp.getLocation().getBlockZ()));
+                warpList.append("\n" + String.format(lang.getExtension("warps.list.item"), warp.getWarpName(), warp.getOwnerName(), warp.getLocation().getWorld().getName(), warp.getLocation().getBlockX(), warp.getLocation().getBlockY(), warp.getLocation().getBlockZ(), warp.getUses()));
             }
 
-            if (warps.size() == 0) warpList.append("\n" + lang.getError("warp.list.no-warps"));
+            if (warps.size() == 0) warpList.append("\n" + lang.getError("warps.list.no-warps"));
 
             player.sendMessage(warpList.toString());
         } else {
@@ -129,7 +129,7 @@ public class ListWarpCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        for (int i = 1;i <= manager.getWarpCount();i++) {
+        for (int i = 1;i <= Math.ceil((double)manager.getWarpCount() / (double)WARPS_PER_PAGE);i++) {
             pages.add("" + i);
         }
 

@@ -33,6 +33,8 @@ public class WarpCommand implements CommandExecutor {
             if (warp != null) {
                 player.teleport(warp.getLocation());
                 player.sendMessage(String.format(lang.getNormal("warps.teleported"), warpName));
+
+                manager.addUse(warp);
             } else {
                 player.sendMessage(String.format(lang.getError("warps.does-not-exist"), warpName));
             }
